@@ -11,11 +11,14 @@
     <!--页面主题区域-->
     <el-container>
       <!--侧边栏-->
-      <el-aside width="200px">
+      <el-aside :width="isCollapse ? '64px':'200px'">
+        <div class="toggle-button" @click="toggleCollapse">
+        <i :class="isCollapse ? 'el-icon-s-unfold':'el-icon-s-fold'"></i></div>
         <!--侧边栏菜单区域-->
-        <el-menu background-color="#333744" text-color="#fff" active-text-color="#409EFF">
+        <el-menu background-color="#333744" text-color="#fff" active-text-color="#409EFF" unique-opened
+                 :collapse="isCollapse" :collapse-transition="false" router :default-active="activePath">
           <!--一级菜单-->
-          <el-submenu :index="item.id+''" v-for="item in menulist" :key="item.id">
+          <el-submenu :index="item.id+''" v-for="item in menuList" :key="item.id">
             <!--模板区域-->
             <template slot="title">
               <!--图标-->
@@ -24,7 +27,8 @@
               <span>{{item.authName}}</span>
             </template>
             <!--二级菜单-->
-            <el-menu-item :index="subItem.id+''" v-for="subItem in item.children" :key="subItem.id">
+            <el-menu-item :index="'/'+subItem.path" v-for="subItem in item.children" :key="subItem.id"
+            @click="saveNavState('/'+subItem.path)">
               <!--模板区域-->
               <template slot="title">
                 <!--图标-->
@@ -36,7 +40,10 @@
         </el-menu>
       </el-aside>
       <!--右侧主体区域-->
-      <el-main>Main</el-main>
+      <el-main>
+        <!--路由占位符-->
+        <router-view></router-view>
+      </el-main>
     </el-container>
   </el-container>
 </template>
@@ -46,7 +53,7 @@ export default {
   data () {
     return {
       //  左侧菜单数据
-      menulist: [],
+      menuList: [],
       //  一级菜单图标
       iconObj: {
         125: 'el-icon-user-solid',
@@ -54,11 +61,16 @@ export default {
         101: 'el-icon-shopping-bag-1',
         102: 'el-icon-notebook-2',
         145: 'el-icon-tickets'
-      }
+      },
+      //  是否折叠
+      isCollapse: false,
+      //  被激活的链接地址
+      activePath: ''
     }
   },
   created () {
     this.getMenuList()
+    this.activePath = window.sessionStorage.getItem('activePath')
   },
   methods: {
     logout () {
@@ -68,8 +80,17 @@ export default {
     async getMenuList () {
       const { data: res } = await this.$http.get('menus')
       if (res.meta.status !== 200) return this.$message.error(res.meta.msg)
-      this.menulist = res.data
+      this.menuList = res.data
       console.log(res)
+    },
+    // 切点菜单的展开/折叠
+    toggleCollapse () {
+      this.isCollapse = !this.isCollapse
+    },
+    // 保存连接的激活状态
+    saveNavState (activePath) {
+      window.sessionStorage.setItem('activePath', activePath)
+      this.activePath = activePath
     }
   }
 }
@@ -101,6 +122,21 @@ export default {
 
   .el-aside {
     background-color: #333744;
+    .el-menu {
+      border-right: none ;//边框显示不在一条直线
+    }
+  }
+  .toggle-button {
+    background-color: #4A5064;
+    font-size: 24px;
+    //line-height: 24px;
+    color: #ffffff;
+    text-align: center;
+    cursor: pointer;
+    height: 35px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   .el-main {
